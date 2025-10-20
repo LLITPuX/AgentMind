@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # FalkorDB - графова база даних
+  falkordb:
+    image: falkordb/falkordb:latest
+    container_name: falkordb
+    ports:
+      - "6379:6379"
+    volumes:
+      - falkordb_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Python Dev Environment
+  python-dev:
+    build: .
+    container_name: graphrag-dev
+    depends_on:
+      falkordb:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    environment:
+      - FALKORDB_HOST=falkordb
+      - FALKORDB_PORT=6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    working_dir: /app
+    command: tail -f /dev/null
+    stdin_open: true
+    tty: true
+
+volumes:
+  falkordb_data:
+    driver: local
