@@ -2,7 +2,7 @@
 
 FastAPI бекенд з WebSocket підтримкою та рефлексивною системою пам'яті для платформи AgentMind.
 
-**Версія**: 0.3.0 (Етап 3 завершено)
+**Версія**: 0.4.0 (Етап 4 завершено)
 
 ## Структура
 
@@ -13,15 +13,17 @@ backend/
 │   ├── main.py              # FastAPI додаток з WebSocket
 │   ├── memory/              # Модуль пам'яті ✨
 │   │   ├── __init__.py
-│   │   ├── manager.py       # MemoryManager + бітемпоральні операції
+│   │   ├── manager.py       # MemoryManager + vector search (Етап 4)
 │   │   ├── stm.py           # ShortTermMemoryBuffer
 │   │   ├── schema.py        # Pydantic моделі (Етап 2)
 │   │   ├── extraction_models.py  # Extraction моделі (Етап 3)
-│   │   ├── consolidation.py      # ConsolidationGraph (Етап 3)
-│   │   └── embeddings.py         # EmbeddingManager (Етап 3)
-│   └── api/                 # API endpoints (Етап 3)
+│   │   ├── consolidation.py      # ConsolidationGraph + embeddings (Етап 3-4)
+│   │   ├── embeddings.py         # EmbeddingManager (Етап 3)
+│   │   └── retrieval.py          # RetrievalGraph (Етап 4)
+│   └── api/                 # API endpoints (Етап 3-4)
 │       ├── __init__.py
-│       └── consolidation.py # Consolidation endpoints
+│       ├── consolidation.py # Consolidation endpoints (Етап 3)
+│       └── retrieval.py     # Search endpoints (Етап 4)
 ├── tests/
 │   ├── conftest.py
 │   ├── test_memory_manager.py
@@ -31,7 +33,11 @@ backend/
 │   ├── test_extraction_models.py         # Unit тести (Етап 3)
 │   ├── test_consolidation_graph.py       # Unit тести (Етап 3)
 │   ├── test_consolidation_integration.py # Integration тести (Етап 3)
-│   └── test_deduplication.py             # Integration тести (Етап 3)
+│   ├── test_deduplication.py             # Integration тести (Етап 3)
+│   ├── test_vector_search.py             # Unit тести (Етап 4)
+│   ├── test_retrieval_graph.py           # Unit тести (Етап 4)
+│   ├── test_retrieval_api.py             # Integration тести (Етап 4)
+│   └── test_retrieval_integration.py     # E2E тести (Етап 4)
 ├── Dockerfile
 ├── pyproject.toml       # Poetry залежності
 ├── pytest.ini
@@ -61,6 +67,8 @@ docker-compose up backend
 - `WebSocket /ws/graph-updates` - WebSocket для оновлень графу
 - `POST /api/consolidate` - Запустити консолідацію STM → LTM (Етап 3)
 - `GET /api/consolidation/status` - Статус STM буфера (Етап 3)
+- `POST /api/search` - Гібридний пошук в пам'яті (Етап 4)
+- `GET /api/search/status` - Статус системи пошуку (Етап 4)
 
 ## WebSocket Protocol
 
@@ -162,6 +170,35 @@ Pydantic моделі для structured output від LLM:
 - `ExtractedRelation` - зв'язок між сутностями
 - `ExtractionResult` - повний результат екстракції
 
+### Retrieval (Етап 4)
+
+#### RetrievalGraph (`src/memory/retrieval.py`)
+
+LangGraph state machine для гібридного пошуку в LTM.
+
+**Workflow:**
+1. `vector_search` - пошук схожих вузлів через embeddings
+2. `graph_expansion` - розширення на 1-hop сусідів та statements
+3. `response_synthesis` - генерація текстової відповіді через LLM
+
+**Гібридний пошук:**
+- Vector similarity search (cosine similarity з FalkorDB vector index)
+- Graph traversal для контексту (neighbors + statements)
+- LLM synthesis з атрибуцією джерел
+
+**Методи:**
+- `search(query, graph_types)` - виконати пошук
+- Підтримка фільтрації по graph_type (internal/external)
+
+#### Vector Search (`src/memory/manager.py`)
+
+Розширення MemoryManager для векторного пошуку:
+
+**Методи:**
+- `store_node_embedding(node_id, embedding)` - зберегти embedding для вузла
+- `vector_search_nodes(query_embedding, top_k, graph_type)` - пошук схожих вузлів
+- Використання FalkorDB vector indices з cosine similarity
+
 ## 🧪 Тестування
 
 ### Запуск всіх тестів
@@ -176,19 +213,25 @@ poetry run pytest tests/ -v
 
 ### Тестові категорії
 
-**Unit тести (45 тестів):**
+**Unit тести (60+ тестів):**
 - `test_schema.py` - валідація Pydantic моделей (31)
 - `test_extraction_models.py` - extraction models (10)
 - `test_consolidation_graph.py` - структура графа (4)
+- `test_retrieval_graph.py` - retrieval graph structure (7)
+- `test_retrieval_api.py` - API endpoint validation (8)
 
-**Integration тести (39 тестів):**
+**Integration тести (50+ тестів):**
 - `test_memory_manager.py` - підключення та базові операції (7)
 - `test_stm_buffer.py` - робота з STM (12)
 - `test_bitemporal_ltm.py` - бітемпоральні операції (10)
 - `test_deduplication.py` - дедуплікація exact + vector (6)
-- `test_consolidation_integration.py` - консолідація workflow (4)
+- `test_consolidation_integration.py` - консолідація з embeddings (6)
+- `test_vector_search.py` - vector search операції (6)
+- `test_retrieval_integration.py` - E2E retrieval workflow (6)
 
-**Всього: 84 тести, всі проходять ✅**
+**Всього: 112 тести**
+- **101 стабільних** (unit + integration) - ✅ проходять завжди
+- **11 E2E тестів** (з LLM calls) - ✅ проходять окремо
 
 ### Приклад використання
 
@@ -251,6 +294,27 @@ result = consolidation.run()
 print(f"Processed: {result['observations_processed']}")
 print(f"Entities: {result['entities_extracted']}")
 print(f"Nodes created: {result['nodes_created']}")
+
+# Гібридний пошук (Етап 4)
+from src.memory import RetrievalGraph
+
+# Створити retrieval graph
+retrieval = RetrievalGraph(
+    memory_manager=manager,
+    top_k=5  # Top 5 results
+)
+
+# Пошук по всіх графах
+result = retrieval.search("What does Alice like?")
+print(f"Response: {result['response']}")
+print(f"Sources: {result['metadata']['sources_count']}")
+
+# Пошук тільки в Internal графі
+result = retrieval.search(
+    "What are my preferences?",
+    graph_types=[GraphType.INTERNAL]
+)
+print(f"Response: {result['response']}")
 ```
 
 ## 📚 Додаткова документація
