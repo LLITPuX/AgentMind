@@ -11,6 +11,7 @@ import asyncio
 from typing import List
 
 from .api.consolidation import router as consolidation_router
+from .api.retrieval import router as retrieval_router
 
 app = FastAPI(
     title="AgentMind Backend",
@@ -29,6 +30,7 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(consolidation_router)
+app.include_router(retrieval_router)
 
 
 # WebSocket Connection Manager
