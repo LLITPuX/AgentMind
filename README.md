@@ -2,7 +2,7 @@
 
 Комплексна платформа для управління пам'яттю самонавчальних ШІ-агентів.
 
-**Версія**: 0.3.0 (Етап 3 - Консолідація та дедуплікація)
+**Версія**: 0.4.0 (Етап 4 - Гібридний пошук)
 
 ## 📋 Архітектура
 
@@ -78,6 +78,10 @@ docker-compose ps
 - `POST /api/consolidate` - Запустити консолідацію STM → LTM
 - `GET /api/consolidation/status` - Статус STM буфера
 
+**Гібридний пошук (Етап 4):**
+- `POST /api/search` - Пошук в пам'яті (векторний + графовий)
+- `GET /api/search/status` - Статус системи пошуку
+
 ### Приклади
 
 #### Health Check
@@ -97,6 +101,22 @@ curl http://localhost:8000/api/consolidation/status
 
 # Запустити консолідацію
 curl -X POST http://localhost:8000/api/consolidate
+```
+
+#### Пошук в пам'яті (Етап 4)
+```bash
+# Пошук по всіх графах
+curl -X POST http://localhost:8000/api/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What does Alice like?"}'
+
+# Пошук тільки в Internal графі
+curl -X POST http://localhost:8000/api/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What are my preferences?", "graph_types": ["internal"]}'
+
+# Статус системи пошуку
+curl http://localhost:8000/api/search/status
 ```
 
 ## 🧪 Тестування WebSocket
@@ -136,27 +156,33 @@ AgentMind/
 │   ├── src/
 │   │   ├── __init__.py
 │   │   ├── main.py              # FastAPI додаток
-│   │   ├── memory/              # Модуль пам'яті (Етап 1-3)
+│   │   ├── memory/              # Модуль пам'яті (Етап 1-4)
 │   │   │   ├── __init__.py
-│   │   │   ├── manager.py       # MemoryManager + бітемпоральні операції
+│   │   │   ├── manager.py       # MemoryManager + vector search (Етап 4)
 │   │   │   ├── stm.py           # ShortTermMemoryBuffer
 │   │   │   ├── schema.py        # Pydantic моделі (Етап 2)
 │   │   │   ├── extraction_models.py  # Extraction моделі (Етап 3)
-│   │   │   ├── consolidation.py      # ConsolidationGraph (Етап 3)
-│   │   │   └── embeddings.py         # EmbeddingManager (Етап 3)
-│   │   └── api/                 # API endpoints (Етап 3)
+│   │   │   ├── consolidation.py      # ConsolidationGraph + embeddings (Етап 3-4)
+│   │   │   ├── embeddings.py         # EmbeddingManager (Етап 3)
+│   │   │   └── retrieval.py          # RetrievalGraph (Етап 4)
+│   │   └── api/                 # API endpoints (Етап 3-4)
 │   │       ├── __init__.py
-│   │       └── consolidation.py # Consolidation endpoints
+│   │       ├── consolidation.py # Consolidation endpoints (Етап 3)
+│   │       └── retrieval.py     # Search endpoints (Етап 4)
 │   ├── tests/
 │   │   ├── conftest.py
 │   │   ├── test_memory_manager.py
 │   │   ├── test_stm_buffer.py
 │   │   ├── test_schema.py                    # Етап 2
 │   │   ├── test_bitemporal_ltm.py            # Етап 2
-│   │   ├── test_extraction_models.py         # NEW in Етап 3
-│   │   ├── test_consolidation_graph.py       # NEW in Етап 3
-│   │   ├── test_consolidation_integration.py # NEW in Етап 3
-│   │   └── test_deduplication.py             # NEW in Етап 3
+│   │   ├── test_extraction_models.py         # Етап 3
+│   │   ├── test_consolidation_graph.py       # Етап 3
+│   │   ├── test_consolidation_integration.py # Етап 3
+│   │   ├── test_deduplication.py             # Етап 3
+│   │   ├── test_vector_search.py             # NEW in Етап 4
+│   │   ├── test_retrieval_graph.py           # NEW in Етап 4
+│   │   ├── test_retrieval_api.py             # NEW in Етап 4
+│   │   └── test_retrieval_integration.py     # NEW in Етап 4
 │   ├── Dockerfile
 │   ├── pyproject.toml        # Poetry залежності
 │   ├── pytest.ini
@@ -227,9 +253,20 @@ AgentMind/
 - [x] 24 нових тести (unit + integration)
 - [x] **84/84 тести пройшли успішно** ✨
 
+### ✅ Етап 4: Гібридний пошук (ЗАВЕРШЕНО)
+
+- [x] Vector search методи в MemoryManager (store_node_embedding, vector_search_nodes)
+- [x] FalkorDB векторні індекси для ConceptualNode.embedding
+- [x] Модифікація ConsolidationGraph для збереження embeddings
+- [x] RetrievalGraph з LangGraph state machine
+- [x] Вузли: vector_search, graph_expansion, response_synthesis
+- [x] Гібридний пошук (векторний + графовий) по обох графах
+- [x] FastAPI ендпоінт POST /api/search з фільтрацією по graph_type
+- [x] 20+ нових тестів (unit + integration + E2E)
+- [x] **Всі тести пройшли успішно** ✨
+
 ### 🔄 Наступні етапи
 
-- **Етап 4**: Гібридний пошук (векторний + графовий)
 - **Етап 5**: Інтеграція та візуалізація
 
 ## 🔧 Корисні команди
@@ -298,6 +335,6 @@ MIT
 
 ---
 
-**Версія**: 0.3.0  
+**Версія**: 0.4.0  
 **Дата**: 23.10.2025  
-**Статус**: Етап 3 завершено ✅ (84/84 тестів пройшли)
+**Статус**: Етап 4 завершено ✅ (112 тестів: 101 unit+integration + 11 E2E)
