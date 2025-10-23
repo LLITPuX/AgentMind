@@ -155,17 +155,26 @@ class EmbeddingManager:
 _embedding_manager: Optional[EmbeddingManager] = None
 
 
-def get_embedding_manager() -> EmbeddingManager:
+def get_embedding_manager(force_new: bool = False) -> EmbeddingManager:
     """
     Get or create the global EmbeddingManager instance.
+    
+    Args:
+        force_new: If True, create a new instance even if one exists
     
     Returns:
         Singleton EmbeddingManager instance
     """
     global _embedding_manager
     
-    if _embedding_manager is None:
+    if _embedding_manager is None or force_new:
         _embedding_manager = EmbeddingManager()
     
     return _embedding_manager
+
+
+def reset_embedding_manager() -> None:
+    """Reset the singleton instance (useful for testing)."""
+    global _embedding_manager
+    _embedding_manager = None
 
