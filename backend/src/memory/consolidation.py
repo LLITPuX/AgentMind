@@ -175,7 +175,26 @@ class ConsolidationGraph:
    - "internal" for agent self-concept, user preferences, user information
    - "external" for external world knowledge, facts about companies, people, etc.
 
-Extract and structure as JSON."""
+Return a JSON object with this exact structure:
+{
+  "entities": [
+    {
+      "label": "Person|Organization|Concept|Language|etc",
+      "name": "Entity name",
+      "graph_type": "internal|external",
+      "properties": {}
+    }
+  ],
+  "relations": [
+    {
+      "edge_type": "LIKES|WORKS_AT|KNOWS|etc",
+      "from_entity_name": "Source entity name",
+      "to_entity_name": "Target entity name",
+      "graph_type": "internal|external",
+      "properties": {}
+    }
+  ]
+}"""
             
             human_prompt = f"""Observations:
 {observations_text}
@@ -188,9 +207,17 @@ Extract entities and relationships."""
                 HumanMessage(content=human_prompt)
             ]
             
-            # Call LLM with structured output
-            structured_llm = self.llm.with_structured_output(ExtractionResult)
-            result: ExtractionResult = structured_llm.invoke(messages)
+            # Call LLM with JSON mode and parse manually
+            # Use bind to set response_format
+            llm_with_json = self.llm.bind(response_format={"type": "json_object"})
+            response = llm_with_json.invoke(messages)
+            
+            # Parse JSON response
+            import json
+            response_json = json.loads(response.content)
+            
+            # Convert to ExtractionResult
+            result = ExtractionResult(**response_json)
             
             logger.info(f"Extracted {len(result.entities)} entities and {len(result.relations)} relations")
             
@@ -204,7 +231,9 @@ Extract entities and relationships."""
             }
             
         except Exception as e:
+            import traceback
             logger.error(f"Failed to extract entities: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return {
                 **state,
                 "error": f"Failed to extract entities: {str(e)}",
@@ -338,6 +367,21 @@ Extract entities and relationships."""
                     entity_id_map[entity.name] = node_id
                     created_node_ids.append(node_id)
                     logger.debug(f"Created new node for '{entity.name}': {node_id}")
+                    
+                    # Generate and store embedding for the node
+                    try:
+                        # Create text representation for embedding
+                        properties_str = ", ".join([f"{k}: {v}" for k, v in entity.properties.items()])
+                        text_for_embedding = f"{entity.label}: {entity.name}. {properties_str}" if properties_str else f"{entity.label}: {entity.name}"
+                        
+                        # Generate embedding
+                        embedding = self.embedding_manager.generate_embedding(text_for_embedding)
+                        
+                        # Store embedding in node
+                        self.memory_manager.store_node_embedding(node_id, embedding)
+                        logger.debug(f"Stored embedding for node '{entity.name}'")
+                    except Exception as e:
+                        logger.warning(f"Failed to store embedding for node '{entity.name}': {e}")
             
             # Create relations
             for relation in extracted_relations:
