@@ -603,4 +603,143 @@ class MemoryManager:
         except Exception as e:
             logger.error(f"Failed to get statements: {e}")
             return []
+    
+    # =========================================================================
+    # Vector Search Operations (Stage 4)
+    # =========================================================================
+    
+    def store_node_embedding(
+        self,
+        node_id: str,
+        embedding: List[float],
+        graph_name: str = "agentmind_ltm"
+    ) -> None:
+        """
+        Store embedding vector for a node using FalkorDB vector format.
+        
+        Args:
+            node_id: ID of the node to store embedding for
+            embedding: Vector embedding (list of floats)
+            graph_name: Name of the graph
+        
+        Raises:
+            RuntimeError: If storing embedding fails
+        """
+        try:
+            graph = self.get_graph(graph_name)
+            
+            # First, ensure vector index exists
+            try:
+                # Create vector index using FalkorDB syntax
+                # CREATE VECTOR INDEX FOR (n:ConceptualNode) ON (n.embedding) OPTIONS {dimension: dim, similarity: 'cosine'}
+                index_query = f"""
+                CREATE VECTOR INDEX FOR (n:ConceptualNode) ON (n.embedding) OPTIONS {{dimension: {len(embedding)}, similarity: 'cosine'}}
+                """
+                graph.query(index_query)
+                logger.debug("Created vector index for ConceptualNode.embedding")
+            except Exception as e:
+                # Index might already exist, which is fine
+                logger.debug(f"Vector index creation note: {e}")
+            
+            # Store embedding as vecf32 vector
+            # Convert Python list to FalkorDB vecf32 format
+            embedding_str = str(embedding)
+            
+            query = """
+            MATCH (n:ConceptualNode {id: $node_id})
+            SET n.embedding = vecf32($embedding_list)
+            RETURN n.id AS id
+            """
+            
+            result = graph.query(query, {
+                "node_id": node_id,
+                "embedding_list": embedding
+            })
+            
+            if not result.result_set:
+                raise RuntimeError(f"Node with id {node_id} not found")
+            
+            logger.debug(f"Stored embedding for node {node_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to store embedding for node {node_id}: {e}")
+            raise RuntimeError(f"Cannot store embedding: {e}")
+    
+    def vector_search_nodes(
+        self,
+        query_embedding: List[float],
+        top_k: int = 5,
+        graph_type: Optional[GraphType] = None,
+        graph_name: str = "agentmind_ltm"
+    ) -> List[Dict[str, Any]]:
+        """
+        Search nodes by vector similarity using FalkorDB cosine distance.
+        
+        Args:
+            query_embedding: Query vector to search for
+            top_k: Number of top results to return
+            graph_type: Optional filter by graph_type (internal/external)
+            graph_name: Name of the graph
+        
+        Returns:
+            List of node dictionaries with similarity scores
+        """
+        try:
+            graph = self.get_graph(graph_name)
+            
+            # Build query using vec.cosineDistance for similarity
+            # Lower distance = higher similarity
+            # We use (1 - distance) to get similarity score
+            if graph_type:
+                query = """
+                MATCH (n:ConceptualNode)
+                WHERE n.embedding IS NOT NULL
+                  AND n.graph_type = $graph_type
+                  AND n.tx_time_to IS NULL
+                WITH n, (1.0 - vec.cosineDistance(n.embedding, vecf32($query_embedding))) AS similarity
+                WHERE similarity > 0
+                RETURN n, similarity
+                ORDER BY similarity DESC
+                LIMIT $top_k
+                """
+                params = {
+                    "query_embedding": query_embedding,
+                    "top_k": top_k,
+                    "graph_type": graph_type.value
+                }
+            else:
+                query = """
+                MATCH (n:ConceptualNode)
+                WHERE n.embedding IS NOT NULL
+                  AND n.tx_time_to IS NULL
+                WITH n, (1.0 - vec.cosineDistance(n.embedding, vecf32($query_embedding))) AS similarity
+                WHERE similarity > 0
+                RETURN n, similarity
+                ORDER BY similarity DESC
+                LIMIT $top_k
+                """
+                params = {
+                    "query_embedding": query_embedding,
+                    "top_k": top_k
+                }
+            
+            result = graph.query(query, params)
+            
+            # Convert results to list of dicts
+            nodes = []
+            for row in result.result_set:
+                node = row[0]
+                similarity = row[1]
+                
+                if hasattr(node, 'properties'):
+                    node_dict = dict(node.properties)
+                    node_dict['similarity_score'] = float(similarity)
+                    nodes.append(node_dict)
+            
+            logger.debug(f"Vector search found {len(nodes)} nodes")
+            return nodes
+            
+        except Exception as e:
+            logger.error(f"Vector search failed: {e}")
+            return []
 
