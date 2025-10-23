@@ -79,15 +79,27 @@
 - ✅ 24 нові тести (10 extraction + 4 graph + 6 deduplication + 4 integration)
 - ✅ Всі 84 тести пройшли успішно
 
-#### Етап 4: Гібридний пошук (Backend, TDD)
+#### Етап 4: Гібридний пошук (Backend, TDD) ✅ ЗАВЕРШЕНО
 - **Завдання**: Реалізувати LangGraph-агента для пошуку інформації у пам'яті.
 - **Результат**: API-ендпоінт, що приймає текстовий запит і повертає релевантний контекст із графа.
 
-- [ ] Крок 4.1: Векторний індекс у FalkorDB для вузлів.
-- [ ] Крок 4.2: Модифікація Consolidator — генерація та збереження ембедингів для кожної сутності.
-- [ ] Крок 4.3: Граф у LangGraph (`RetrievalGraph`).
-- [ ] Крок 4.4: Вузли: `vector_search`, `graph_expansion`, `response_synthesis`.
-- [ ] Крок 4.5: Інтеграційний тест: наповнення графа, запит, перевірка релевантності відповіді.
+- [x] Крок 4.1: Векторний індекс у FalkorDB для вузлів.
+- [x] Крок 4.2: Модифікація Consolidator — генерація та збереження ембедингів для кожної сутності.
+- [x] Крок 4.3: Граф у LangGraph (`RetrievalGraph`).
+- [x] Крок 4.4: Вузли: `vector_search`, `graph_expansion`, `response_synthesis`.
+- [x] Крок 4.5: Інтеграційний тест: наповнення графа, запит, перевірка релевантності відповіді.
+
+**Реалізовано:**
+- ✅ `manager.py` - vector search методи (store_node_embedding, vector_search_nodes)
+- ✅ FalkorDB vector indices з cosine similarity
+- ✅ `consolidation.py` - автоматичне збереження embeddings при створенні вузлів
+- ✅ `retrieval.py` - RetrievalGraph з LangGraph state machine
+- ✅ Hybrid retrieval: vector search + graph expansion (1-hop neighbors + statements)
+- ✅ LLM-based response synthesis з атрибуцією джерел
+- ✅ FastAPI endpoints: POST /api/search, GET /api/search/status
+- ✅ Фільтрація по graph_type (internal/external)
+- ✅ 20+ нових тестів (unit + integration + E2E)
+- ✅ **Всі тести пройшли успішно** ✨
 
 #### Етап 5: Інтеграція та візуалізація (Full Stack)
 - **Завдання**: З'єднати бекенд-логіку з візуальним інтерфейсом.
