@@ -2,7 +2,7 @@
 
 Комплексна платформа для управління пам'яттю самонавчальних ШІ-агентів.
 
-**Версія**: 0.2.0 (Етап 2 - Бітемпоральна пам'ять)
+**Версія**: 0.3.0 (Етап 3 - Консолідація та дедуплікація)
 
 ## 📋 Архітектура
 
@@ -68,10 +68,15 @@ docker-compose ps
 
 ### Backend (http://localhost:8000)
 
+**Основні:**
 - `GET /` - Інформація про сервіс
 - `GET /health` - Health check
 - `WebSocket /ws/graph-updates` - WebSocket для оновлень графу в реальному часі
 - `POST /api/broadcast` - Тестовий broadcast
+
+**Консолідація (Етап 3):**
+- `POST /api/consolidate` - Запустити консолідацію STM → LTM
+- `GET /api/consolidation/status` - Статус STM буфера
 
 ### Приклади
 
@@ -83,6 +88,15 @@ curl http://localhost:8000/health
 #### Broadcast повідомлення (тест WebSocket)
 ```bash
 curl -X POST http://localhost:8000/api/broadcast?message=Hello
+```
+
+#### Консолідація пам'яті (Етап 3)
+```bash
+# Перевірити статус STM
+curl http://localhost:8000/api/consolidation/status
+
+# Запустити консолідацію
+curl -X POST http://localhost:8000/api/consolidate
 ```
 
 ## 🧪 Тестування WebSocket
@@ -121,18 +135,28 @@ AgentMind/
 ├── backend/
 │   ├── src/
 │   │   ├── __init__.py
-│   │   ├── main.py           # FastAPI додаток
-│   │   └── memory/           # Модуль пам'яті (Етап 1-2)
+│   │   ├── main.py              # FastAPI додаток
+│   │   ├── memory/              # Модуль пам'яті (Етап 1-3)
+│   │   │   ├── __init__.py
+│   │   │   ├── manager.py       # MemoryManager + бітемпоральні операції
+│   │   │   ├── stm.py           # ShortTermMemoryBuffer
+│   │   │   ├── schema.py        # Pydantic моделі (Етап 2)
+│   │   │   ├── extraction_models.py  # Extraction моделі (Етап 3)
+│   │   │   ├── consolidation.py      # ConsolidationGraph (Етап 3)
+│   │   │   └── embeddings.py         # EmbeddingManager (Етап 3)
+│   │   └── api/                 # API endpoints (Етап 3)
 │   │       ├── __init__.py
-│   │       ├── manager.py    # MemoryManager + бітемпоральні операції
-│   │       ├── stm.py        # ShortTermMemoryBuffer
-│   │       └── schema.py     # Pydantic моделі (NEW in Етап 2)
+│   │       └── consolidation.py # Consolidation endpoints
 │   ├── tests/
 │   │   ├── conftest.py
 │   │   ├── test_memory_manager.py
 │   │   ├── test_stm_buffer.py
-│   │   ├── test_schema.py             # NEW in Етап 2
-│   │   └── test_bitemporal_ltm.py     # NEW in Етап 2
+│   │   ├── test_schema.py                    # Етап 2
+│   │   ├── test_bitemporal_ltm.py            # Етап 2
+│   │   ├── test_extraction_models.py         # NEW in Етап 3
+│   │   ├── test_consolidation_graph.py       # NEW in Етап 3
+│   │   ├── test_consolidation_integration.py # NEW in Етап 3
+│   │   └── test_deduplication.py             # NEW in Етап 3
 │   ├── Dockerfile
 │   ├── pyproject.toml        # Poetry залежності
 │   ├── pytest.ini
@@ -192,9 +216,19 @@ AgentMind/
 - [x] Реалізація multi-source truth (Statement-based architecture)
 - [x] **60/60 тестів пройшли успішно** ✨
 
+### ✅ Етап 3: Консолідація та дедуплікація (ЗАВЕРШЕНО)
+
+- [x] LangGraph ConsolidationGraph для STM → LTM
+- [x] Extraction models (ExtractedEntity, ExtractedRelation)
+- [x] LLM-based entity extraction з structured output
+- [x] 2-рівнева дедуплікація (exact match + vector similarity)
+- [x] EmbeddingManager для семантичної схожості
+- [x] FastAPI ендпоінти (/api/consolidate, /api/consolidation/status)
+- [x] 24 нових тести (unit + integration)
+- [x] **84/84 тести пройшли успішно** ✨
+
 ### 🔄 Наступні етапи
 
-- **Етап 3**: Консолідація та дедуплікація (LangGraph)
 - **Етап 4**: Гібридний пошук (векторний + графовий)
 - **Етап 5**: Інтеграція та візуалізація
 
@@ -264,6 +298,6 @@ MIT
 
 ---
 
-**Версія**: 0.2.0  
+**Версія**: 0.3.0  
 **Дата**: 23.10.2025  
-**Статус**: Етап 2 завершено ✅ (60/60 тестів пройшли)
+**Статус**: Етап 3 завершено ✅ (84/84 тестів пройшли)

@@ -113,17 +113,17 @@ docker-compose up -d --build backend
 Перевірте, що система пам'яті працює коректно:
 
 ```bash
-# Запустити всі тести (60 тестів)
+# Запустити всі тести (84 тести)
 docker-compose exec backend python -m pytest tests/ -v
 
-# Тільки unit тести (31 тест)
-docker-compose exec backend python -m pytest tests/test_schema.py -v
+# Тільки unit тести (45 тестів)
+docker-compose exec backend python -m pytest tests/test_schema.py tests/test_extraction_models.py tests/test_consolidation_graph.py -v
 
-# Тільки integration тести (29 тестів)
-docker-compose exec backend python -m pytest tests/test_bitemporal_ltm.py -v
+# Тільки integration тести (39 тестів)
+docker-compose exec backend python -m pytest tests/test_bitemporal_ltm.py tests/test_deduplication.py tests/test_consolidation_integration.py -v
 ```
 
-Очікуваний результат: **60 passed** ✅
+Очікуваний результат: **84 passed** ✅
 
 ## ✅ Все працює!
 
@@ -131,15 +131,17 @@ docker-compose exec backend python -m pytest tests/test_bitemporal_ltm.py -v
 - ✅ Frontend з зеленим індикатором статусу
 - ✅ Backend відповідає на `/health`
 - ✅ Повідомлення передаються через WebSocket
-- ✅ Всі тести проходять (60/60)
+- ✅ Всі тести проходять (84/84)
+- ✅ API консолідації доступний
 
-**Вітаємо! Етапи 0-2 завершено!** 🎉
+**Вітаємо! Етапи 0-3 завершено!** 🎉
 
 ### Що вже реалізовано:
 
 - ✅ **Етап 0**: Фундамент (Docker, FastAPI, Next.js, WebSocket)
 - ✅ **Етап 1**: Ядро пам'яті (MemoryManager, STM)
 - ✅ **Етап 2**: Бітемпоральна пам'ять (Statement-based architecture)
+- ✅ **Етап 3**: Консолідація (LangGraph, дедуплікація, embeddings)
 
-Переходьте до **Етапу 3** (Консолідація) згідно [docs/AgentMind_Plan.md](docs/AgentMind_Plan.md)
+Переходьте до **Етапу 4** (Гібридний пошук) згідно [docs/AgentMind_Plan.md](docs/AgentMind_Plan.md)
 

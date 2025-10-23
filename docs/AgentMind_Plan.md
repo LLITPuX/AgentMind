@@ -60,14 +60,24 @@
 - ✅ Multi-source truth (Elon Musk CEO scenario)
 - ✅ Всі 60 тестів пройшли успішно
 
-#### Етап 3: Консолідація та дедуплікація (Backend, TDD)
+#### Етап 3: Консолідація та дедуплікація (Backend, TDD) ✅ ЗАВЕРШЕНО
 - **Завдання**: Створити LangGraph-агент, що перетворює текст зі STM на структурований граф у LTM, уникаючи дублікатів.
 - **Результат**: Робочий процес консолідації, що запускається через API.
 
-- [ ] Крок 3.1: Базовий граф у LangGraph (`ConsolidationGraph`).
-- [ ] Крок 3.2: Вузол `extract_entities` (LLM-виділення сутностей/зв'язків/часових рамок).
-- [ ] Крок 3.3: Вузол `deduplicate_and_save` (перевірка наявності в FalkorDB: спочатку точна назва, далі — векторна схожість).
-- [ ] Крок 3.4: Інтеграційний тест, що запускає консолідацію і перевіряє коректність підграфу у БД.
+- [x] Крок 3.1: Базовий граф у LangGraph (`ConsolidationGraph`).
+- [x] Крок 3.2: Вузол `extract_entities` (LLM-виділення сутностей/зв'язків/часових рамок).
+- [x] Крок 3.3: Вузол `deduplicate_and_save` (перевірка наявності в FalkorDB: спочатку точна назва, далі — векторна схожість).
+- [x] Крок 3.4: Інтеграційний тест, що запускає консолідацію і перевіряє коректність підграфу у БД.
+
+**Реалізовано:**
+- ✅ `consolidation.py` - LangGraph state machine для STM → LTM
+- ✅ `extraction_models.py` - ExtractedEntity, ExtractedRelation, ExtractionResult
+- ✅ `embeddings.py` - EmbeddingManager для vector similarity
+- ✅ 2-рівнева дедуплікація (exact match + vector similarity > 0.85)
+- ✅ FastAPI ендпоінти: POST /api/consolidate, GET /api/consolidation/status
+- ✅ Structured output від LLM через Pydantic
+- ✅ 24 нові тести (10 extraction + 4 graph + 6 deduplication + 4 integration)
+- ✅ Всі 84 тести пройшли успішно
 
 #### Етап 4: Гібридний пошук (Backend, TDD)
 - **Завдання**: Реалізувати LangGraph-агента для пошуку інформації у пам'яті.

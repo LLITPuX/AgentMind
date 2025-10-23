@@ -1,6 +1,6 @@
 """
 AgentMind Backend - FastAPI з WebSocket підтримкою
-Етап 0: Базовий HTTP + WebSocket сервер
+Етапи 0-3: HTTP + WebSocket + Memory Consolidation
 """
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -9,6 +9,8 @@ from datetime import datetime
 import json
 import asyncio
 from typing import List
+
+from .api.consolidation import router as consolidation_router
 
 app = FastAPI(
     title="AgentMind Backend",
@@ -24,6 +26,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include API routers
+app.include_router(consolidation_router)
 
 
 # WebSocket Connection Manager

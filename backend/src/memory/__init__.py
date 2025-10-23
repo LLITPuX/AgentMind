@@ -16,6 +16,9 @@ from .schema import (
     ConceptualEdge,
     Statement,
 )
+from .consolidation import ConsolidationGraph
+from .extraction_models import ExtractedEntity, ExtractedRelation, ExtractionResult
+from .embeddings import EmbeddingManager, get_embedding_manager
 
 __all__ = [
     "MemoryManager",
@@ -28,5 +31,11 @@ __all__ = [
     "ConceptualNode",
     "ConceptualEdge",
     "Statement",
+    "ConsolidationGraph",
+    "ExtractedEntity",
+    "ExtractedRelation",
+    "ExtractionResult",
+    "EmbeddingManager",
+    "get_embedding_manager",
 ]
 
