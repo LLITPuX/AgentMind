@@ -230,6 +230,107 @@ class TestConsolidationIntegration:
         assert len(result.result_set) == 1
 
 
+    def test_consolidation_stores_embeddings_for_nodes(self, setup_memory):
+        """Test that consolidation stores embeddings for created nodes"""
+        stm, manager = setup_memory
+        
+        consolidation = ConsolidationGraph(
+            stm_buffer=stm,
+            memory_manager=manager
+        )
+        
+        # Create state with entity marked for creation
+        state: ConsolidationState = {
+            "observations": [],
+            "extracted_entities": [
+                ExtractedEntity(
+                    label="Language",
+                    name="Python",
+                    graph_type=GraphType.EXTERNAL,
+                    properties={"type": "programming"}
+                )
+            ],
+            "extracted_relations": [],
+            "deduplicated_nodes": [],
+            "created_statements": [],
+            "entity_id_map": {"Python": None},  # None means needs creation
+            "messages": [],
+            "error": None
+        }
+        
+        # Call save_to_ltm node
+        updated_state = consolidation.save_to_ltm_node(state)
+        
+        # Get the created node ID
+        node_id = updated_state["entity_id_map"]["Python"]
+        assert node_id is not None
+        
+        # Verify embedding was stored
+        graph = manager.get_graph("agentmind_ltm")
+        result = graph.query("""
+            MATCH (n:ConceptualNode {id: $node_id})
+            RETURN n.embedding AS embedding
+        """, {"node_id": node_id})
+        
+        assert len(result.result_set) == 1
+        # Embedding should be stored (not None)
+        assert result.result_set[0][0] is not None
+    
+    def test_embeddings_are_searchable_after_consolidation(self, setup_memory):
+        """Test that embeddings created during consolidation are searchable"""
+        stm, manager = setup_memory
+        
+        consolidation = ConsolidationGraph(
+            stm_buffer=stm,
+            memory_manager=manager
+        )
+        
+        # Create two entities
+        state: ConsolidationState = {
+            "observations": [],
+            "extracted_entities": [
+                ExtractedEntity(
+                    label="Language",
+                    name="Python",
+                    graph_type=GraphType.EXTERNAL,
+                    properties={"type": "programming"}
+                ),
+                ExtractedEntity(
+                    label="Language",
+                    name="JavaScript",
+                    graph_type=GraphType.EXTERNAL,
+                    properties={"type": "programming"}
+                )
+            ],
+            "extracted_relations": [],
+            "deduplicated_nodes": [],
+            "created_statements": [],
+            "entity_id_map": {"Python": None, "JavaScript": None},
+            "messages": [],
+            "error": None
+        }
+        
+        # Create nodes with embeddings
+        consolidation.save_to_ltm_node(state)
+        
+        # Now try vector search for "Python"
+        from src.memory.embeddings import get_embedding_manager
+        emb_manager = get_embedding_manager(force_new=True)
+        query_embedding = emb_manager.generate_embedding("Python programming language")
+        
+        results = manager.vector_search_nodes(
+            query_embedding,
+            top_k=5,
+            graph_name="agentmind_ltm"
+        )
+        
+        # Should find at least one result
+        assert len(results) >= 1
+        # Python should be in the results
+        result_names = [r['name'] for r in results]
+        assert 'Python' in result_names
+
+
 @pytest.mark.integration
 class TestConsolidationAPI:
     """Tests for consolidation API endpoint"""
