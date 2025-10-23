@@ -4,7 +4,7 @@ services:
   # FalkorDB - графова база даних
   falkordb:
     image: falkordb/falkordb:latest
-    container_name: falkordb
+    container_name: agentmind-falkordb
     ports:
       - "6379:6379"
     volumes:
@@ -15,26 +15,59 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - agentmind-network
 
-  # Python Dev Environment
-  python-dev:
-    build: .
-    container_name: graphrag-dev
+  # Backend - FastAPI + LangGraph
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agentmind-backend
     depends_on:
       falkordb:
         condition: service_healthy
+    ports:
+      - "8000:8000"
     volumes:
-      - ./src:/app/src
-      - ./data:/app/data
+      - ./backend/src:/app/src
     environment:
       - FALKORDB_HOST=falkordb
       - FALKORDB_PORT=6379
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-    working_dir: /app
-    command: tail -f /dev/null
-    stdin_open: true
-    tty: true
+      - ENVIRONMENT=development
+    restart: unless-stopped
+    networks:
+      - agentmind-network
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend - Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agentmind-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000
+    restart: unless-stopped
+    networks:
+      - agentmind-network
 
 volumes:
   falkordb_data:
     driver: local
+
+networks:
+  agentmind-network:
+    driver: bridge
+
