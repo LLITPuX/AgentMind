@@ -18,7 +18,8 @@ from .schema import (
 )
 from .consolidation import ConsolidationGraph
 from .extraction_models import ExtractedEntity, ExtractedRelation, ExtractionResult
-from .embeddings import EmbeddingManager, get_embedding_manager
+from .embeddings import EmbeddingManager, get_embedding_manager, reset_embedding_manager
+from .retrieval import RetrievalGraph
 
 __all__ = [
     "MemoryManager",
@@ -37,5 +38,7 @@ __all__ = [
     "ExtractionResult",
     "EmbeddingManager",
     "get_embedding_manager",
+    "reset_embedding_manager",
+    "RetrievalGraph",
 ]
 
