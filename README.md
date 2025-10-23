@@ -2,7 +2,7 @@
 
 Комплексна платформа для управління пам'яттю самонавчальних ШІ-агентів.
 
-**Версія**: 0.1.0 (Етап 0 - Фундамент)
+**Версія**: 0.2.0 (Етап 2 - Бітемпоральна пам'ять)
 
 ## 📋 Архітектура
 
@@ -121,9 +121,21 @@ AgentMind/
 ├── backend/
 │   ├── src/
 │   │   ├── __init__.py
-│   │   └── main.py           # FastAPI додаток
+│   │   ├── main.py           # FastAPI додаток
+│   │   └── memory/           # Модуль пам'яті (Етап 1-2)
+│   │       ├── __init__.py
+│   │       ├── manager.py    # MemoryManager + бітемпоральні операції
+│   │       ├── stm.py        # ShortTermMemoryBuffer
+│   │       └── schema.py     # Pydantic моделі (NEW in Етап 2)
+│   ├── tests/
+│   │   ├── conftest.py
+│   │   ├── test_memory_manager.py
+│   │   ├── test_stm_buffer.py
+│   │   ├── test_schema.py             # NEW in Етап 2
+│   │   └── test_bitemporal_ltm.py     # NEW in Етап 2
 │   ├── Dockerfile
 │   ├── pyproject.toml        # Poetry залежності
+│   ├── pytest.ini
 │   └── README.md
 │
 ├── frontend/
@@ -137,7 +149,8 @@ AgentMind/
 │   └── README.md
 │
 ├── docs/
-│   └── AgentMind_Plan.md     # Повний план розробки
+│   ├── AgentMind_Plan.md                      # Повний план розробки
+│   └── Reflexive_Memory_Architecture.md       # NEW - Архітектурний документ
 │
 ├── docker-compose.yml        # Orchestration
 ├── .gitignore
@@ -147,8 +160,10 @@ AgentMind/
 ## 📖 Документація
 
 - **План розробки**: [docs/AgentMind_Plan.md](docs/AgentMind_Plan.md)
+- **Архітектура пам'яті**: [docs/Reflexive_Memory_Architecture.md](docs/Reflexive_Memory_Architecture.md)
 - **Backend API**: [backend/README.md](backend/README.md)
 - **Frontend**: [frontend/README.md](frontend/README.md)
+- **Швидкий старт**: [QUICKSTART.md](QUICKSTART.md)
 
 ## 🗺️ Поточний прогрес
 
@@ -160,10 +175,25 @@ AgentMind/
 - [x] Frontend: Next.js з WebSocket клієнтом
 - [x] Перший запуск і тестування
 
-### 🔄 Наступні етапи (з docs/AgentMind_Plan.md)
+### ✅ Етап 1: Ядро пам'яті (ЗАВЕРШЕНО)
 
-- **Етап 1**: Ядро пам'яті (MemoryManager, STM)
-- **Етап 2**: Довгострокова пам'ять + бітемпоральність
+- [x] MemoryManager для підключення до FalkorDB
+- [x] ShortTermMemoryBuffer (STM) з Redis-like операціями
+- [x] Unit та integration тести
+- [x] TDD підхід
+
+### ✅ Етап 2: Довгострокова пам'ять + бітемпоральність (ЗАВЕРШЕНО)
+
+- [x] Pydantic моделі з валідацією (Source, ConceptualNode, ConceptualEdge, Statement)
+- [x] BiTemporalMixin з valid_time та transaction_time
+- [x] GraphType для поділу на Internal/External графи
+- [x] Методи MemoryManager для бітемпоральних операцій
+- [x] 31 unit тестів + 10 integration тестів
+- [x] Реалізація multi-source truth (Statement-based architecture)
+- [x] **60/60 тестів пройшли успішно** ✨
+
+### 🔄 Наступні етапи
+
 - **Етап 3**: Консолідація та дедуплікація (LangGraph)
 - **Етап 4**: Гібридний пошук (векторний + графовий)
 - **Етап 5**: Інтеграція та візуалізація
@@ -234,6 +264,6 @@ MIT
 
 ---
 
-**Версія**: 0.1.0  
+**Версія**: 0.2.0  
 **Дата**: 23.10.2025  
-**Статус**: Етап 0 завершено ✅
+**Статус**: Етап 2 завершено ✅ (60/60 тестів пройшли)

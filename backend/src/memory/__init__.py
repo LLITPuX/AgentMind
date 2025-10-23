@@ -6,7 +6,27 @@ using FalkorDB as the underlying graph database.
 """
 
 from .manager import MemoryManager
-from .stm import ShortTermMemoryBuffer
+from .stm import ShortTermMemoryBuffer, Observation
+from .schema import (
+    GraphType,
+    SourceType,
+    Source,
+    BiTemporalMixin,
+    ConceptualNode,
+    ConceptualEdge,
+    Statement,
+)
 
-__all__ = ["MemoryManager", "ShortTermMemoryBuffer"]
+__all__ = [
+    "MemoryManager",
+    "ShortTermMemoryBuffer",
+    "Observation",
+    "GraphType",
+    "SourceType",
+    "Source",
+    "BiTemporalMixin",
+    "ConceptualNode",
+    "ConceptualEdge",
+    "Statement",
+]
 

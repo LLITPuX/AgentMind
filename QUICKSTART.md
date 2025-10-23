@@ -108,14 +108,38 @@ docker-compose up -d --build backend
 2. Перевірте логи frontend: `docker-compose logs frontend`
 3. Перевірте консоль браузера (F12)
 
+## 🧪 Запуск тестів
+
+Перевірте, що система пам'яті працює коректно:
+
+```bash
+# Запустити всі тести (60 тестів)
+docker-compose exec backend python -m pytest tests/ -v
+
+# Тільки unit тести (31 тест)
+docker-compose exec backend python -m pytest tests/test_schema.py -v
+
+# Тільки integration тести (29 тестів)
+docker-compose exec backend python -m pytest tests/test_bitemporal_ltm.py -v
+```
+
+Очікуваний результат: **60 passed** ✅
+
 ## ✅ Все працює!
 
 Якщо ви бачите:
 - ✅ Frontend з зеленим індикатором статусу
 - ✅ Backend відповідає на `/health`
 - ✅ Повідомлення передаються через WebSocket
+- ✅ Всі тести проходять (60/60)
 
-**Вітаємо! Етап 0 завершено!** 🎉
+**Вітаємо! Етапи 0-2 завершено!** 🎉
 
-Переходьте до **Етапу 1** згідно [docs/AgentMind_Plan.md](docs/AgentMind_Plan.md)
+### Що вже реалізовано:
+
+- ✅ **Етап 0**: Фундамент (Docker, FastAPI, Next.js, WebSocket)
+- ✅ **Етап 1**: Ядро пам'яті (MemoryManager, STM)
+- ✅ **Етап 2**: Бітемпоральна пам'ять (Statement-based architecture)
+
+Переходьте до **Етапу 3** (Консолідація) згідно [docs/AgentMind_Plan.md](docs/AgentMind_Plan.md)
 
