@@ -1,7 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic';
 import styles from './page.module.css'
+import { getFullGraph, GraphData } from '../services/api';
+import InteractionPanel from '../components/InteractionPanel';
+
+const GraphVisualizer = dynamic(() => import('../components/GraphVisualizer'), {
+    ssr: false,
+});
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
 
@@ -17,6 +24,26 @@ export default function Home() {
   const [wsStatus, setWsStatus] = useState<ConnectionStatus>('disconnected')
   const [messages, setMessages] = useState<WebSocketMessage[]>([])
   const [ws, setWs] = useState<WebSocket | null>(null)
+  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
+  const [stmSize, setStmSize] = useState(0);
+  const [lastSearchResult, setLastSearchResult] = useState<any>(null);
+  const [lastConsolidationResult, setLastConsolidationResult] = useState<any>(null);
+  const [isConsolidating, setIsConsolidating] = useState(false);
+
+
+  // Initial graph data fetch
+  useEffect(() => {
+    const fetchGraphData = async () => {
+        try {
+            const data = await getFullGraph();
+            setGraphData(data);
+        } catch (error) {
+            console.error('Failed to fetch initial graph data:', error);
+        }
+    };
+    fetchGraphData();
+  }, []);
+
 
   useEffect(() => {
     // WebSocket підключення
@@ -33,6 +60,12 @@ export default function Home() {
         const data: WebSocketMessage = JSON.parse(event.data)
         console.log('📨 Отримано:', data)
         setMessages((prev) => [...prev, data].slice(-10)) // Останні 10 повідомлень
+
+        if (data.type === 'graph_update' && data.payload) {
+            setGraphData(data.payload as GraphData);
+            setIsConsolidating(false); // Consolidation finished
+        }
+
       } catch (error) {
         console.error('❌ Помилка парсингу:', error)
       }
@@ -102,27 +135,63 @@ export default function Home() {
         </h1>
         
         <p className={styles.description}>
-          Платформа для управління пам'яттю самонавчальних ШІ-агентів
+          An interface for observing and interacting with an AI agent's memory.
         </p>
 
-        <div className={styles.statusCard}>
-          <div className={styles.statusRow}>
-            <span className={styles.statusLabel}>WebSocket:</span>
-            <div className={styles.statusIndicator}>
-              <div 
-                className={styles.statusDot}
-                style={{ backgroundColor: getStatusColor() }}
-              />
-              <span className={styles.statusText}>{getStatusText()}</span>
-            </div>
-          </div>
+        <InteractionPanel
+            onConsolidationStart={() => {
+                setIsConsolidating(true);
+                setLastConsolidationResult(null);
+            }}
+            onConsolidationComplete={(result) => setLastConsolidationResult(result)}
+            onSearchResult={(result) => setLastSearchResult(result)}
+            onStmUpdate={(newSize) => setStmSize(newSize)}
+        />
+        
+        <div className={styles.graphContainer}>
+            <GraphVisualizer graphData={graphData} />
         </div>
 
-        {wsStatus === 'connected' && (
-          <button className={styles.button} onClick={sendTestMessage}>
-            📤 Відправити тестове повідомлення
-          </button>
-        )}
+        <div className={styles.statusAndResults}>
+            <div className={styles.statusCard}>
+              <h3 className={styles.cardTitle}>System Status</h3>
+              <div className={styles.statusRow}>
+                <span className={styles.statusLabel}>WebSocket:</span>
+                <div className={styles.statusIndicator}>
+                  <div 
+                    className={styles.statusDot}
+                    style={{ backgroundColor: getStatusColor() }}
+                  />
+                  <span className={styles.statusText}>{getStatusText()}</span>
+                </div>
+              </div>
+              <div className={styles.statusRow}>
+                <span className={styles.statusLabel}>STM Observations:</span>
+                <span className={styles.statusValue}>{stmSize}</span>
+              </div>
+               <div className={styles.statusRow}>
+                <span className={styles.statusLabel}>LTM Nodes:</span>
+                <span className={styles.statusValue}>{graphData.nodes.length}</span>
+              </div>
+              <div className={styles.statusRow}>
+                <span className={styles.statusLabel}>LTM Edges:</span>
+                <span className={styles.statusValue}>{graphData.links.length}</span>
+              </div>
+               {isConsolidating && (
+                <div className={styles.statusRow}>
+                    <span className={styles.statusLabel}>Consolidation:</span>
+                    <span className={styles.statusValue}>In Progress...</span>
+                </div>
+              )}
+            </div>
+
+            {lastSearchResult && (
+                <div className={styles.resultsCard}>
+                    <h3 className={styles.cardTitle}>Last Search Result</h3>
+                    <p className={styles.resultsText}>{lastSearchResult.response}</p>
+                </div>
+            )}
+        </div>
 
         {messages.length > 0 && (
           <div className={styles.messagesCard}>
@@ -151,7 +220,7 @@ export default function Home() {
         </div>
 
         <div className={styles.footer}>
-          <p>Версія 0.1.0 • Етап 0: Фундамент завершено</p>
+          <p>Version 1.0.0 • Stage 5: Full Stack Integration</p>
         </div>
       </main>
     </div>
