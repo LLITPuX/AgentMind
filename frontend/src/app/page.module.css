@@ -35,6 +35,7 @@
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  grid-column: auto; /* Let it flow naturally */
 }
 
 .statusRow {
@@ -176,6 +177,56 @@
   margin-top: 1rem;
 }
 
+.graphContainer {
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin: 20px 0;
+    overflow: hidden;
+    background-color: #111;
+    width: 100%;
+    height: 600px; /* Or any other fixed height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.statusAndResults {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.resultsCard {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.cardTitle {
+    font-size: 1.2rem;
+    color: #eee;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
+}
+
+.resultsText {
+    font-size: 1rem;
+    color: #ddd;
+    white-space: pre-wrap; /* To respect newlines from the response */
+    line-height: 1.6;
+}
+
+.statusValue {
+    font-weight: bold;
+    color: #4ade80; /* A nice green for values */
+}
+
+
 @media (max-width: 768px) {
   .title {
     font-size: 2.5rem;
@@ -188,5 +239,8 @@
   .container {
     padding: 1rem;
   }
+  .statusAndResults {
+        grid-template-columns: 1fr;
+    }
 }
 
