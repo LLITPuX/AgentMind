@@ -13,6 +13,7 @@ from typing import List
 from .api.consolidation import router as consolidation_router
 from .api.retrieval import router as retrieval_router
 from .api.observations import router as observations_router
+from .api.chat import router as chat_router
 from .dependencies import get_engine, get_manager, ConnectionManager, engine as cognitive_engine
 
 app = FastAPI(
@@ -34,6 +35,7 @@ app.add_middleware(
 app.include_router(consolidation_router)
 app.include_router(retrieval_router)
 app.include_router(observations_router)
+app.include_router(chat_router)
 
 
 # Add a new router for graph operations

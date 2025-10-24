@@ -68,3 +68,29 @@ export const searchMemory = async (query: string): Promise<any> => {
     }
     return response.json();
 };
+
+/**
+ * Sends a chat message to the AI agent.
+ * @param {string} message - The user's message.
+ * @param {Array} messages - Previous conversation history.
+ * @returns {Promise<any>} A promise that resolves to the agent's response.
+ */
+export const sendChatMessage = async (message: string, messages: any[] = []): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            message,
+            messages: messages.map(msg => ({
+                role: msg.role,
+                content: msg.content
+            }))
+        }),
+    });
+    if (!response.ok) {
+        throw new Error('Failed to send chat message');
+    }
+    return response.json();
+};

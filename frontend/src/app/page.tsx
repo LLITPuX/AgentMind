@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import styles from './page.module.css'
 import { getFullGraph, GraphData } from '../services/api';
 import InteractionPanel from '../components/InteractionPanel';
@@ -129,14 +130,36 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
+      <nav className={styles.navigation}>
+        <div className={styles.navBrand}>
+          <h1 className={styles.title}>
+            🧠 AgentMind
+          </h1>
+        </div>
+        <div className={styles.navLinks}>
+          <Link href="/" className={styles.navLink}>
+            Memory Graph
+          </Link>
+          <Link href="/chat" className={styles.navLink}>
+            Chat with Agent
+          </Link>
+        </div>
+      </nav>
+      
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          🧠 AgentMind
-        </h1>
-        
         <p className={styles.description}>
           An interface for observing and interacting with an AI agent's memory.
         </p>
+
+        <div className={styles.quickActions}>
+          <Link href="/chat" className={styles.chatButton}>
+            <div className={styles.chatButtonIcon}>🤖</div>
+            <div className={styles.chatButtonContent}>
+              <h3>Chat with Agent</h3>
+              <p>Start a conversation with your AI agent</p>
+            </div>
+          </Link>
+        </div>
 
         <InteractionPanel
             onConsolidationStart={() => {
