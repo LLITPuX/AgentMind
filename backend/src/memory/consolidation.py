@@ -510,7 +510,7 @@ Extract entities and relationships."""
             
             return {
                 "status": "completed" if not final_state.get("error") else "failed",
-                "error": final_state.get("error"),
+                "error": final_state.get("error") or "",
                 "observations_processed": len(final_state.get("observations", [])),
                 "entities_extracted": len(final_state.get("extracted_entities", [])),
                 "relations_extracted": len(final_state.get("extracted_relations", [])),
