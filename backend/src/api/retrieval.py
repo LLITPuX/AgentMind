@@ -8,23 +8,14 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, List
 import logging
-import os
 
-from ..memory.retrieval import RetrievalGraph
-from ..memory.manager import MemoryManager
+from ..engine import CognitiveEngine
+from ..dependencies import get_engine
 from ..memory.schema import GraphType
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["retrieval"])
-
-
-# Dependency injection
-def get_memory_manager() -> MemoryManager:
-    """Get MemoryManager instance."""
-    host = os.getenv("FALKORDB_HOST", "localhost")
-    port = int(os.getenv("FALKORDB_PORT", "6379"))
-    return MemoryManager(host=host, port=port)
 
 
 class SearchRequest(BaseModel):
@@ -55,25 +46,10 @@ class SearchResponse(BaseModel):
 @router.post("/search", response_model=SearchResponse)
 async def search_memory(
     request: SearchRequest,
-    memory_manager: MemoryManager = Depends(get_memory_manager)
+    engine: CognitiveEngine = Depends(get_engine)
 ) -> SearchResponse:
     """
-    Search memory using hybrid retrieval (vector + graph).
-    
-    This endpoint performs the following:
-    1. Vector search to find semantically similar nodes
-    2. Graph expansion to include neighbors and statements
-    3. LLM-based response synthesis with source attribution
-    
-    Args:
-        request: Search request with query and optional filters
-        memory_manager: Injected MemoryManager instance
-    
-    Returns:
-        SearchResponse with synthesized answer and metadata
-    
-    Raises:
-        HTTPException: If search fails
+    Search memory using the CognitiveEngine.
     """
     try:
         logger.info(f"Search request: '{request.query}'")
@@ -91,16 +67,11 @@ async def search_memory(
                     detail=f"Invalid graph_type. Must be 'internal' or 'external': {e}"
                 )
         
-        # Create retrieval graph
-        retrieval_graph = RetrievalGraph(
-            memory_manager=memory_manager,
-            top_k=request.top_k
-        )
-        
-        # Execute search
-        result = retrieval_graph.search(
+        # Execute search via engine
+        result = engine.search_memory(
             query=request.query,
-            graph_types=graph_types
+            graph_types=graph_types,
+            top_k=request.top_k
         )
         
         if result["status"] == "failed":
@@ -127,19 +98,14 @@ async def search_memory(
 
 @router.get("/search/status")
 async def get_search_status(
-    memory_manager: MemoryManager = Depends(get_memory_manager)
+    engine: CognitiveEngine = Depends(get_engine)
 ) -> Dict[str, Any]:
     """
-    Get search system status.
-    
-    Returns information about available memory graphs and statistics.
-    
-    Returns:
-        Dict with status information
+    Get search system status via CognitiveEngine.
     """
     try:
-        # Get graph statistics
-        stats = memory_manager.get_graph_stats("agentmind_ltm")
+        # Get graph statistics from memory manager via engine
+        stats = engine.memory_manager.get_graph_stats("agentmind_ltm")
         
         return {
             "status": "ready",
