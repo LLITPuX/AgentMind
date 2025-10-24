@@ -2,7 +2,7 @@
 
 Комплексна платформа для управління пам'яттю самонавчальних ШІ-агентів.
 
-**Версія**: 0.4.0 (Етап 4 - Гібридний пошук)
+**Версія**: 0.5.0 (Етап 5 - Chat Integration)
 
 ## 📋 Архітектура
 
@@ -59,10 +59,17 @@ docker-compose ps
 
 Перейдіть до **http://localhost:3000** у браузері.
 
-Ви побачите:
+**Головна сторінка (Memory Graph):**
 - ✅ Статус WebSocket з'єднання
-- 📊 Реал-тайм повідомлення від бекенду
-- 🧪 Кнопку для відправки тестових повідомлень
+- 📊 Реал-тайм візуалізація графу пам'яті
+- 🧠 Панель взаємодії з пам'яттю (STM/LTM)
+- 🤖 **Кнопка "Chat with Agent"** для переходу в чат
+
+**Сторінка чату (http://localhost:3000/chat):**
+- 💬 Пряме спілкування з AI агентом
+- 🧠 Інтеграція з OpenAI GPT-4o-mini
+- 📝 Історія діалогу
+- 🔄 Навігація між сторінками
 
 ## 📡 API Ендпоінти
 
@@ -81,6 +88,10 @@ docker-compose ps
 **Гібридний пошук (Етап 4):**
 - `POST /api/search` - Пошук в пам'яті (векторний + графовий)
 - `GET /api/search/status` - Статус системи пошуку
+
+**Чат з агентом (Етап 5):**
+- `POST /api/chat` - Спілкування з AI агентом
+- `GET /api/chat/status` - Статус чат системи
 
 ### Приклади
 
@@ -119,12 +130,48 @@ curl -X POST http://localhost:8000/api/search \
 curl http://localhost:8000/api/search/status
 ```
 
-## 🧪 Тестування WebSocket
+#### Чат з агентом (Етап 5)
+```bash
+# Спілкування з AI агентом
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello, who are you?", "messages": []}'
 
+# Чат з історією
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What do you know about me?",
+    "messages": [
+      {"role": "user", "content": "I am working on a project"},
+      {"role": "assistant", "content": "That is great! What kind of project?"}
+    ]
+  }'
+
+# Статус чат системи
+curl http://localhost:8000/api/chat/status
+```
+
+## 🧪 Тестування функціональності
+
+### WebSocket тестування
 1. Відкрийте frontend: http://localhost:3000
 2. Перевірте що статус "Підключено" (зелений індикатор)
 3. Натисніть "Відправити тестове повідомлення"
 4. Ви побачите відповідь від бекенду в списку повідомлень
+
+### Chat тестування
+1. Перейдіть на http://localhost:3000/chat
+2. Введіть повідомлення: "Hello, who are you?"
+3. Перевірте що агент відповідає відповідно до своєї особистості
+4. Спробуйте діалог з історією
+5. Перевірте навігацію між сторінками
+
+### Memory Graph тестування
+1. На головній сторінці додайте спостереження в STM
+2. Запустіть консолідацію (STM → LTM)
+3. Використайте пошук для знаходження інформації
+4. Перевірте оновлення графу в реальному часі
 
 ## 🛠️ Розробка
 
@@ -165,10 +212,11 @@ AgentMind/
 │   │   │   ├── consolidation.py      # ConsolidationGraph + embeddings (Етап 3-4)
 │   │   │   ├── embeddings.py         # EmbeddingManager (Етап 3)
 │   │   │   └── retrieval.py          # RetrievalGraph (Етап 4)
-│   │   └── api/                 # API endpoints (Етап 3-4)
+│   │   └── api/                 # API endpoints (Етап 3-5)
 │   │       ├── __init__.py
 │   │       ├── consolidation.py # Consolidation endpoints (Етап 3)
-│   │       └── retrieval.py     # Search endpoints (Етап 4)
+│   │       ├── retrieval.py     # Search endpoints (Етап 4)
+│   │       └── chat.py          # Chat endpoints (Етап 5)
 │   ├── tests/
 │   │   ├── conftest.py
 │   │   ├── test_memory_manager.py
@@ -182,7 +230,8 @@ AgentMind/
 │   │   ├── test_vector_search.py             # NEW in Етап 4
 │   │   ├── test_retrieval_graph.py           # NEW in Етап 4
 │   │   ├── test_retrieval_api.py             # NEW in Етап 4
-│   │   └── test_retrieval_integration.py     # NEW in Етап 4
+│   │   ├── test_retrieval_integration.py     # NEW in Етап 4
+│   │   └── test_chat_api.py                  # NEW in Етап 5
 │   ├── Dockerfile
 │   ├── pyproject.toml        # Poetry залежності
 │   ├── pytest.ini
@@ -190,10 +239,18 @@ AgentMind/
 │
 ├── frontend/
 │   ├── src/
-│   │   └── app/
-│   │       ├── page.tsx      # Головна сторінка
-│   │       ├── layout.tsx
-│   │       └── globals.css
+│   │   ├── app/
+│   │   │   ├── page.tsx      # Головна сторінка (Memory Graph)
+│   │   │   ├── chat/         # NEW - Сторінка чату (Етап 5)
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── page.module.css
+│   │   │   ├── layout.tsx
+│   │   │   └── globals.css
+│   │   ├── components/       # React компоненти
+│   │   │   ├── GraphVisualizer.tsx
+│   │   │   └── InteractionPanel.tsx
+│   │   └── services/         # API сервіси
+│   │       └── api.ts
 │   ├── Dockerfile
 │   ├── package.json
 │   └── README.md
@@ -265,9 +322,23 @@ AgentMind/
 - [x] 20+ нових тестів (unit + integration + E2E)
 - [x] **Всі тести пройшли успішно** ✨
 
+### ✅ Етап 5: Chat Integration (ЗАВЕРШЕНО)
+
+- [x] Нова сторінка чату (/chat) з сучасним UI
+- [x] Інтеграція з OpenAI GPT-4o-mini API
+- [x] FastAPI ендпоінт POST /api/chat з обробкою помилок
+- [x] Оновлення OpenAI клієнта для v1.0+ API
+- [x] Навігація між Memory Graph та Chat сторінками
+- [x] Виділена кнопка "Chat with Agent" на головній сторінці
+- [x] Підтримка історії діалогу
+- [x] Тести для chat API
+- [x] Responsive дизайн та анімації
+- [x] **Повна інтеграція чату з платформою** ✨
+
 ### 🔄 Наступні етапи
 
-- **Етап 5**: Інтеграція та візуалізація
+- **Етап 6**: Інтеграція чату з системою пам'яті
+- **Етап 7**: Автоматична консолідація діалогів
 
 ## 🔧 Корисні команди
 
@@ -335,6 +406,6 @@ MIT
 
 ---
 
-**Версія**: 0.4.0  
-**Дата**: 23.10.2025  
-**Статус**: Етап 4 завершено ✅ (112 тестів: 101 unit+integration + 11 E2E)
+**Версія**: 0.5.0  
+**Дата**: 24.10.2025  
+**Статус**: Етап 5 завершено ✅ (Chat Integration + 112 тестів)
