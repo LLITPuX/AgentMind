@@ -743,3 +743,59 @@ class MemoryManager:
             logger.error(f"Vector search failed: {e}")
             return []
 
+    def get_full_graph(self) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Retrieves the entire knowledge graph from LTM.
+        
+        Returns:
+            A dictionary containing lists of all nodes and links.
+        """
+        try:
+            graph = self.get_graph("agentmind_ltm")
+            
+            # Get all nodes
+            nodes_query = """
+            MATCH (n:ConceptualNode)
+            WHERE n.tx_time_to IS NULL
+            RETURN n.id AS id, n.label AS label, n.name AS name, 
+                   n.graph_type AS graph_type, n.valid_from AS valid_from
+            """
+            
+            nodes_result = graph.query(nodes_query)
+            nodes = []
+            for row in nodes_result.result_set:
+                nodes.append({
+                    "id": row[0],
+                    "label": row[1],
+                    "name": row[2],
+                    "graph_type": row[3],
+                    "valid_from": row[4]
+                })
+            
+            # Get all edges
+            edges_query = """
+            MATCH (a:ConceptualNode)-[r:ConceptualEdge]->(b:ConceptualNode)
+            WHERE r.tx_time_to IS NULL
+            RETURN a.id AS source, b.id AS target, r.label AS label, r.name AS name
+            """
+            
+            edges_result = graph.query(edges_query)
+            edges = []
+            for row in edges_result.result_set:
+                edges.append({
+                    "source": row[0],
+                    "target": row[1],
+                    "label": row[2],
+                    "name": row[3]
+                })
+            
+            logger.info(f"Retrieved full graph: {len(nodes)} nodes, {len(edges)} edges")
+            return {
+                "nodes": nodes,
+                "links": edges
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get full graph: {e}")
+            return {"nodes": [], "links": []}
+
