@@ -1,21 +1,96 @@
+# Node
+node_modules/
+dist/
+build/
+.cache/
+.npm/
+.pnpm-store/
+.yarn/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/install-state.gz
+.yarnrc.yml
+.yarnrc
+yarn-error.log
+pnpm-lock.yaml
+package-lock.json
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# Frontend frameworks
+.next/
+.nuxt/
+.out/
+.turbo/
+.vite/
+vite.config.ts.timestamp-*
+coverage/
+.eslintcache
+.stylelintcache
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+.venv/
+venv/
+env/
+.python-version
+.mypy_cache/
+.pytype/
+.pyright/
+.pyre/
+.pytest_cache/
+.coverage*
+htmlcov/
+.cache/
+.ruff_cache/
+
+# Tooling
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Env files (keep example)
 .env
 .env.*
 !.env.example
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.venv/
-env/
-build/
-dist/
-node_modules/
-pnpm-lock.yaml
-package-lock.json
-.DS_Store
+!.env.*.example
+
+# Logs
+logs/
+*.log
+*.log.*
+*.out
+*.pid
+
+# IDEs / Editors
 .vscode/
 .idea/
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.orig
 
+# Docker / Compose (keep primary files)
+.docker/
+docker-data/
+docker-compose.override.yml
+docker-compose.local.yml
 
-
+# Misc
+tmp/
+temp/
+*.local
+*.bak
+*.tmp
