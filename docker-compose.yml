@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: agentmind-backend:dev
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      falkordb:
+        condition: service_started
+    env_file:
+      - ./.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: uvicorn app.main:app --host ${API_HOST:-0.0.0.0} --port ${API_PORT:-8000} --reload
+    volumes:
+      - ./backend:/app
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: agentmind-frontend:dev
+    depends_on:
+      - backend
+    env_file:
+      - ./.env
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
+    command: pnpm run dev -- --host 0.0.0.0 --port 5173
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-agentmind}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-agentmind}
+      - POSTGRES_DB=${POSTGRES_DB:-agentmind}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agentmind} -d ${POSTGRES_DB:-agentmind}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    command: >-
+      redis-server --appendonly yes --save 60 1000
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  falkordb:
+    image: falkordb/falkordb:v4.14.3
+    container_name: agentmind-falkordb
+    command: ["falkordb-server", "--appendonly", "yes", "--save", "60", "1000"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - falkordb_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "127.0.0.1", "PING"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+  falkordb_data:
+
