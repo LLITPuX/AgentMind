@@ -59,3 +59,4 @@ export function InputBar({ isLoading, onSendMessage }: InputBarProps) {
 }
 
 
+
